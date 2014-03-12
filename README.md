@@ -1,4 +1,7 @@
-# Section Page Scroller
+# Section Page Scroll
+
+This is a nifty little website scroller that will create page like sections
+that slide up/down on scroll as if moving between pages.
 
 ## Setup
 Clone this repository
