@@ -25,3 +25,7 @@
     -moz-transition: top 200ms ease-in;
     transition: top 200ms ease-in;
 }
+
+.sps-section.sps-up {
+    top: -100%;
+}

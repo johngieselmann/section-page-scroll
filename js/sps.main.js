@@ -55,17 +55,23 @@
         this.curSection = null;
 
         /**
+         * The current section's index in the sections array.
+         * @var int curIndex
+         */
+        this.curIndex = 0;
+
+        /**
          * Flag for whether or not the browser supports CSS transitions.
          * @var bool transSupported
          */
         this.transSupported = false;
 
         /**
-         * Retain the scroll top to determine which direction the user has
-         * scrolled.
-         * @var int scrollTop
+         * The duration of the animation in milliseconds. If relying on CSS
+         * transitions, this MUST match the transition length to work properly.
+         * @var int animationDur
          */
-        this.scrollTop = 0;
+        this.animationDur = 200;
 
         /**
          * A flag that is set while we are moving between sections.
@@ -100,6 +106,9 @@
             } else {
                 self.setZIndex();
             }
+
+            // set the current section to the top section in the DOM
+            self.curSection = self.sections[0];
 
             // bind the events for the class
             self.bindEvents();
@@ -207,34 +216,35 @@
                 return false;
             }
 
-            // check for up or down key press
-            if (e.type === "keydown") {
+            // trigger the movement based on the event type
+            switch (e.type) {
 
-                if (e.keyCode === 40 || e.keyIdentifier === "Down") {
-                    // down key = go to next section
-                    self.nextSection(e);
-                } else if (e.keyCode === 38 || e.keyIdentifier === "Up") {
-                    // up key = go to next section
-                    self.prevSection(e);
-                }
+                // up or down key
+                case "keydown":
 
-            } else {
-                // must be scrolling
+                    if (e.keyCode === 40 || e.keyIdentifier === "Down") {
+                        // down key = go to next section
+                        self.nextSection(e);
+                    } else if (e.keyCode === 38 || e.keyIdentifier === "Up") {
+                        // up key = go to next section
+                        self.prevSection(e);
+                    }
+                    break;
 
-                // check for detail first so Opera uses that instead of wheelDelta
-                var delta = e.detail
-                    ? e.detail * (-120)
-                    : e.wheelDelta
+                // default to scroll
+                default:
 
-                if (delta <= 0) {
-                    self.nextSection(e);
-                } else if (delta >= 0) {
-                    self.prevSection(e);
-                }
+                    // check for detail first so Opera uses that instead of wheelDelta
+                    var delta = e.detail
+                        ? e.detail * (-120)
+                        : e.wheelDelta
 
-                // set the new scroll top
-                self.scrollTop = window.scrollTop;
-
+                    if (delta <= 0) {
+                        self.nextSection(e);
+                    } else if (delta >= 0) {
+                        self.prevSection(e);
+                    }
+                    break;
             }
         };
 
@@ -246,10 +256,24 @@
          * @return void
          */
         this.nextSection = function() {
-            console.log("next section");
-            if (self.transSupported) {
-                
+
+            // do not move to a non-existent next section
+            if ((self.curIndex + 1) === self.sections.length) {
+                return false;
             }
+
+            // flag that we are animating and set a timeout to unflag
+            self.animating = true;
+            setTimeout(self.doneAnimating, self.animationDur);
+
+            if (self.transSupported) {
+                var classes = self.curSection.className;
+                self.curSection.className = classes + " sps-up";
+            }
+
+            // set the new section index and section
+            self.curIndex += 1;
+            self.curSection = self.sections[self.curIndex];
         };
 
         /**
@@ -260,60 +284,39 @@
          * @return void
          */
         this.prevSection = function() {
-            console.log("prev section");
+
+            // do not move to a non-existent previous section
+            if (self.curIndex === 0) {
+                return false;
+            }
+
+            // flag that we are animating and set a timeout to unflag
+            self.animating = true;
+            setTimeout(self.doneAnimating, self.animationDur);
+
+            // remove the class from the previous section off the screen
+            if (self.transSupported) {
+                var prevSection = self.sections[self.curIndex - 1];
+                var prevClasses = prevSection.className;
+                prevSection.className = prevClasses.replace("sps-up", "");
+            }
+
+            // set the new section index and section
+            self.curIndex -= 1;
+            self.curSection = self.sections[self.curIndex];
         };
 
         /**
-         * Handle the scrolling even on the page.
+         * Called when the animation between sections is complete.
          *
          * @author JohnG <john.gieselmann@gmail.com>
          *
-         * @param obj e The scroll event.
-         *
          * @return void
          */
-        this.sectionChange = function(e) {
-            console.log(e);
-
-            // get the direction of the scrolling
-            var dir = "down";
-            switch (dir) {
-                case "up":
-
-                    break;
-
-                case "down":
-
-                    break;
-            }
+        this.doneAnimating = function() {
+            self.animating = false;
         };
 
-        /**
-         * Use CSS transitions to animate the scroll/section change.
-         *
-         * @author JohnG <john.gieselmann@gmail.com>
-         *
-         * @param obj e The triggered event.
-         *
-         * @param str dir The direction in which to scroll the sections.
-         *
-         * @return void
-         */
-        this.transitionScroll = function(e) {
-            switch (dir) {
-                case "up":
-
-                    break;
-
-                case "down":
-
-                    break;
-            }
-        };
-
-        this.animateScroll = function(e) {
-
-        };
     }
 
     /**
