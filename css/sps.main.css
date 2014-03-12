@@ -7,3 +7,20 @@
 /* Sub-section comment block
    ========================================================================== */
 
+.section-page-scroller {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.sps-section {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    -webkit-transition: top 200ms ease-in;
+    -moz-transition: top 200ms ease-in;
+    transition: top 200ms ease-in;
+}

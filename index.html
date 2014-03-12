@@ -3,17 +3,25 @@
 <head>
     <title>Section Page Scroller Example</title>
     <link rel="stylesheet" type="text/css" href="css/sps.main.css" />
+    <link rel="stylesheet" type="text/css" href="css/styles.css" />
 </head>
 <body class="section-page-scroller">
-    <section class="sps-section js-sps-section">
+    <section class="sps-section js-sps-section section-1">
         <h1>Section 1</h1>
     </section>
-    <section class="sps-section js-sps-section">
+    <section class="sps-section js-sps-section section-2">
         <h1>Section 2</h1>
     </section>
-    <section class="sps-section js-sps-section">
+    <section class="sps-section js-sps-section section-3">
         <h1>Section 3</h1>
     </section>
     <script type="text/javascript" src="js/sps.main.js"></script>
+    <script type="text/javascript">
+        // get the page scrolling going
+        window.onload = function() {
+            var sps = new window.SectionPageScroll();
+            sps.init();
+        }
+    </script>
 </body>
 </html>
