@@ -69,9 +69,16 @@
         /**
          * The duration of the animation in milliseconds. If relying on CSS
          * transitions, this MUST match the transition length to work properly.
-         * @var int animationDur
+         * @var int animDur
          */
-        this.animationDur = 200;
+        this.animDur = 300;
+
+        /**
+         * Padding added to the animation duration to make sure we aren't
+         * firing the next animation too soon.
+         * @var int animDurPad
+         */
+        this.animDurPad = 200;
 
         /**
          * A flag that is set while we are moving between sections.
@@ -262,9 +269,10 @@
                 return false;
             }
 
-            // flag that we are animating and set a timeout to unflag
+            // flag that we are animating and remove that flag with a little
+            // padding added onto the animDur property
             self.animating = true;
-            setTimeout(self.doneAnimating, self.animationDur);
+            setTimeout(self.doneAnimating, self.animDur + self.animDurPad);
 
             if (self.transSupported) {
                 var classes = self.curSection.className;
@@ -290,9 +298,10 @@
                 return false;
             }
 
-            // flag that we are animating and set a timeout to unflag
+            // flag that we are animating and remove that flag with a little
+            // padding added onto the animDur property
             self.animating = true;
-            setTimeout(self.doneAnimating, self.animationDur);
+            setTimeout(self.doneAnimating, self.animDur + self.animDurPad);
 
             // remove the class from the previous section off the screen
             if (self.transSupported) {
