@@ -61,6 +61,13 @@
         this.curIndex = 0;
 
         /**
+         * The proper mousewheel event to be bound to the document. This is
+         * initially set in bindEvents and checked for each time we need it.
+         * @var str mwEvent
+         */
+        this.mwEvent = false;
+
+        /**
          * Flag for whether or not the browser supports CSS transitions.
          * @var bool transSupported
          */
@@ -71,7 +78,7 @@
          * transitions, this MUST match the transition length to work properly.
          * @var int animDur
          */
-        this.animDur = 300;
+        this.animDur = 500;
 
         /**
          * Padding added to the animation duration to make sure we aren't
@@ -150,20 +157,50 @@
         this.bindEvents = function() {
 
             // mousewheel is not supported in FF 3.x+
-            var mwEvent = (/Firefox/i.test(navigator.userAgent))
-                ? "DOMMouseScroll"
-                : "mousewheel";
+            if (!self.mwEvent) {
+                self.mwEvent = (/Firefox/i.test(navigator.userAgent))
+                    ? "DOMMouseScroll"
+                    : "mousewheel";
+            }
 
             if (document.attachEvent) {
                 // if IE (and Opera depending on user setting)
-                document.attachEvent("on" + mwEvent, self.handleEvent);
+                document.attachEvent("on" + self.mwEvent, self.handleEvent);
+                document.attachEvent("onkeydown", self.handleEvent);
             } else if (document.addEventListener) {
                 // WC3 browsers
-                document.addEventListener(mwEvent, self.handleEvent, false);
+                document.addEventListener(self.mwEvent, self.handleEvent, false);
+                document.addEventListener("onkeydown", self.handleEvent);
             }
 
 //            window.onmousewheel = self.handleEvent;
-            document.body.onkeydown = self.handleEvent;
+//            document.onkeydown = self.handleEvent;
+        };
+
+        /**
+         * Unbind the event listeners to prevent unnecessary scrolling.
+         *
+         * @author JohnG <john.gieselmann@gmail.com>
+         *
+         * @return void
+         */
+        this.unbindEvents = function() {
+            // mousewheel is not supported in FF 3.x+
+            if (!self.mwEvent) {
+                self.mwEvent = (/Firefox/i.test(navigator.userAgent))
+                    ? "DOMMouseScroll"
+                    : "mousewheel";
+            }
+
+            if (document.attachEvent) {
+                // if IE (and Opera depending on user setting)
+                document.detachEvent("on" + self.mwEvent, self.handleEvent);
+                document.detachEvent("onkeydown", self.handleEvent);
+            } else if (document.addEventListener) {
+                // WC3 browsers
+                document.removeEventListener(self.mwEvent, self.handleEvent, false);
+                document.removeEventListener("onkeydown", self.handleEvent);
+            }
         };
 
         /**
@@ -271,8 +308,7 @@
 
             // flag that we are animating and remove that flag with a little
             // padding added onto the animDur property
-            self.animating = true;
-            setTimeout(self.doneAnimating, self.animDur + self.animDurPad);
+            self.startAnimating();
 
             if (self.transSupported) {
                 var classes = self.curSection.className;
@@ -300,8 +336,7 @@
 
             // flag that we are animating and remove that flag with a little
             // padding added onto the animDur property
-            self.animating = true;
-            setTimeout(self.doneAnimating, self.animDur + self.animDurPad);
+            self.startAnimating();
 
             // remove the class from the previous section off the screen
             if (self.transSupported) {
@@ -316,6 +351,19 @@
         };
 
         /**
+         * Called when the animation process has begun.
+         *
+         * @author JohnG <john.gieselmann@gmail.com>
+         *
+         * @return void
+         */
+        this.startAnimating = function() {
+            self.animating = true;
+            self.unbindEvents();
+            setTimeout(self.doneAnimating, self.animDur + self.animDurPad);
+        };
+
+        /**
          * Called when the animation between sections is complete.
          *
          * @author JohnG <john.gieselmann@gmail.com>
@@ -324,6 +372,7 @@
          */
         this.doneAnimating = function() {
             self.animating = false;
+            self.bindEvents();
         };
 
     }

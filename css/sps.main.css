@@ -21,9 +21,9 @@
     width: 100%;
     height: 100%;
 
-    -webkit-transition: top 300ms ease-in;
-    -moz-transition: top 300ms ease-in;
-    transition: top 300ms ease-in;
+    -webkit-transition: top 500ms ease-in;
+    -moz-transition: top 500ms ease-in;
+    transition: top 500ms ease-in;
 }
 
 .sps-section.sps-up {
