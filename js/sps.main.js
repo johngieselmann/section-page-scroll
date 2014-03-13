@@ -18,32 +18,42 @@
         this.util = new Util();
 
         /**
+         * Get our mobile helper class.
+         * @var class util
+         */
+        this.mobileHelper = new MobileHelper();
+
+        /**
          * The configuration for the class.
          * @var obj config
          *
          * - jsAnimate bool: Force JavaScript animation with bool true.
          *   Default: false
          *
-         * - reverseSections bool: Whether or not to detach and reattach the
-         *   sections in reverse order. If false, we assign a z-index to
-         *   visually order them without manipulating the DOM.
-         *   NOTE: Leave this false if there are other events and/or
-         *   dependencies on the original order.
-         *   - Default: false
-         *
          * - sectionClass str: The class name for the sections that act as
          *   pages.
          *   - Default: js-sps-section
+         *
+         * - transDelay int: The time, in milliseconds, added to the duration
+         *   of the transition to prevent another transition from firing too
+         *   soon.
+         *   - Default: 200
+         *
+         * - transDelayScroll int: The time, in milliseconds, added to the
+         *   duration of the transition to prevent another transition from
+         *   firing too soon when scrolling on a non-mobile browser.
+         *   - Default: 800
          *
          * - zIndexStart int: The starting point for setting the z-index
          *   of the sections to layer them properly.
          *   - Default: 9999
          */
         this.config = {
-            "jsAnimate"       : false,
-            "reverseSections" : false,
-            "sectionClass"    : "js-sps-section",
-            "zIndexStart"     : 9999
+            "jsAnimate"        : false,
+            "sectionClass"     : "js-sps-section",
+            "transDelay"       : 200,
+            "transDelayScroll" : 800,
+            "zIndexStart"      : 9999
         };
 
         /**
@@ -83,13 +93,6 @@
          * @var int animDur
          */
         this.animDur = 500;
-
-        /**
-         * Padding added to the animation duration to make sure we aren't
-         * firing the next animation too soon.
-         * @var int animDurPad
-         */
-        this.animDurPad = 800;
 
         /**
          * The interval duration in milliseconds for the JavaScript animation.
@@ -182,25 +185,80 @@
          */
         this.bindEvents = function() {
 
-            // mousewheel is not supported in FF 3.x+
-            if (!self.mwEvent) {
-                self.mwEvent = (/Firefox/i.test(navigator.userAgent))
-                    ? "DOMMouseScroll"
-                    : "mousewheel";
-            }
+            // bind the events based on the device
+            if (self.util.touch) {
 
-            if (document.attachEvent) {
-                // if IE (and Opera depending on user setting)
-                document.attachEvent("on" + self.mwEvent, self.handleEvent);
-                document.attachEvent("onkeydown", self.handleEvent);
-            } else if (document.addEventListener) {
-                // WC3 browsers
-                document.addEventListener(self.mwEvent, self.handleEvent, false);
-                document.addEventListener("keydown", self.handleEvent);
-            }
+                document.addEventListener(
+                    "touchstart",
+                    self.detectSwipe,
+                    false
+                );
+                document.addEventListener(
+                    "touchmove",
+                    self.detectSwipe,
+                    false
+                );
+                document.addEventListener(
+                    "touchend",
+                    self.detectSwipe,
+                    false
+                );
 
-//            window.onmousewheel = self.handleEvent;
-//            document.onkeydown = self.handleEvent;
+            } else if (self.util.ieMobile) {
+
+                // TODO - Get IE Touch events working
+                document.addEventListener(
+                    "MSPointerDown",
+                    self.detectSwipe,
+                    false
+                );
+                document.addEventListener(
+                    "MSPointerMove",
+                    self.detectSwipe,
+                    false
+                );
+                document.addEventListener(
+                    "MSPointerUp",
+                    self.detectSwipe,
+                    false
+                );
+
+            } else {
+
+                // mousewheel is not supported in FF 3.x+
+                if (!self.mwEvent) {
+                    self.mwEvent = (/Firefox/i.test(navigator.userAgent))
+                        ? "DOMMouseScroll"
+                        : "mousewheel";
+                }
+
+                if (document.attachEvent) {
+
+                    // if IE (and Opera depending on user setting)
+                    document.attachEvent(
+                        "on" + self.mwEvent,
+                        self.handleBrowserEvent
+                    );
+                    document.attachEvent(
+                        "onkeydown",self.handleBrowserEvent
+                    );
+
+                } else if (document.addEventListener) {
+
+                    // WC3 browsers
+                    document.addEventListener(
+                        self.mwEvent,
+                        self.handleBrowserEvent,
+                        false
+                    );
+                    document.addEventListener(
+                        "keydown",
+                        self.handleBrowserEvent,
+                        false
+                    );
+
+                }
+            }
         };
 
         /**
@@ -211,6 +269,7 @@
          * @return void
          */
         this.unbindEvents = function() {
+
             // mousewheel is not supported in FF 3.x+
             if (!self.mwEvent) {
                 self.mwEvent = (/Firefox/i.test(navigator.userAgent))
@@ -218,27 +277,68 @@
                     : "mousewheel";
             }
 
-            if (document.attachEvent) {
+            if (document.detachEvent) {
+
                 // if IE (and Opera depending on user setting)
-                document.detachEvent("on" + self.mwEvent, self.handleEvent);
-                document.detachEvent("onkeydown", self.handleEvent);
-            } else if (document.addEventListener) {
+                document.detachEvent(
+                    "on" + self.mwEvent,
+                    self.handleBrowserEvent
+                );
+                document.detachEvent(
+                    "onkeydown",self.handleBrowserEvent
+                );
+
+            } else if (document.removeEventListener) {
+
                 // WC3 browsers
-                document.removeEventListener(self.mwEvent, self.handleEvent, false);
-                document.removeEventListener("keydown", self.handleEvent);
+                document.removeEventListener(
+                    self.mwEvent,
+                    self.handleBrowserEvent,
+                    false
+                );
+                document.removeEventListener(
+                    "keydown",
+                    self.handleBrowserEvent,
+                    false
+                );
+
             }
         };
 
         /**
-         * Detach and reattach the sections to the DOM in reverse order.
+         * Detect a swipe via the mobile helper and fire any necessary events.
          *
          * @author JohnG <john.gieselmann@gmail.com>
          *
+         * @param obj e The touch event.
+         *
          * @return void
          */
-        this.reverseSections = function() {
+        this.detectSwipe = function(e) {
 
-            self.captureElements();
+            // prevent the default event
+            e.preventDefault();
+
+            // we are currently transitioning, give it a second
+            if (self.animating) {
+                return false;
+            }
+
+            // get the swipe info
+            var swipe = self.mobileHelper.detectSwipe(e);
+
+            // we have a swipe, to go the correct section
+            if (swipe && swipe.dir) {
+                switch (swipe.dir) {
+                    case "up":
+                        self.nextSection();
+                        break;
+
+                    case "down":
+                        self.prevSection();
+                        break;
+                }
+            }
         };
 
         /**
@@ -277,9 +377,10 @@
          *
          * @return void
          */
-        this.handleEvent = function(e) {
+        this.handleBrowserEvent = function(e) {
 
             e = window.event || e;
+            e.preventDefault();
 
             // if we are currently animating between sections stop progress
             if (self.animating) {
@@ -292,27 +393,28 @@
                 // up or down key
                 case "keydown":
 
+                    // down = go to next, up = go to previous
                     if (e.keyCode === 40 || e.keyIdentifier === "Down") {
-                        // down key = go to next section
-                        self.nextSection(e);
+                        self.nextSection();
                     } else if (e.keyCode === 38 || e.keyIdentifier === "Up") {
-                        // up key = go to next section
-                        self.prevSection(e);
+                        self.prevSection();
                     }
                     break;
 
                 // default to scroll
                 default:
 
-                    // check for detail first so Opera uses that instead of wheelDelta
+                    // check for detail first so Opera uses that instead of
+                    // wheelDelta
                     var delta = e.detail
                         ? e.detail * (-120)
                         : e.wheelDelta
 
+                    // scroll down = go to next, scroll up = go to previous
                     if (delta <= 0) {
-                        self.nextSection(e);
+                        self.nextSection(self.config.transDelayScroll);
                     } else if (delta >= 0) {
-                        self.prevSection(e);
+                        self.prevSection(self.config.transDelayScroll);
                     }
                     break;
             }
@@ -323,14 +425,21 @@
          *
          * @author JohnG <john.gieselmann@gmail.com>
          *
+         * @param int padding The amount of time, in milliseconds, to delay
+         * another transition from firing.
+         *
          * @return void
          */
-        this.nextSection = function() {
+        this.nextSection = function(padding) {
 
             // do not move to a non-existent next section
             if ((self.curIndex + 1) === self.sections.length) {
                 return false;
             }
+
+            // default to the class defined value
+            padding = padding || self.config.transDelay;
+            console.log(padding);
 
             // flag that we are animating and remove that flag with a little
             // padding added onto the animDur property
@@ -348,7 +457,7 @@
                 self.curSection.className = classes + " sps-up";
 
                 // clear animating status when it's done
-                setTimeout(self.doneAnimating, self.animDur + self.animDurPad);
+                setTimeout(self.doneAnimating, self.animDur + padding);
             }
 
             // set the new section index and section
@@ -361,14 +470,20 @@
          *
          * @author JohnG <john.gieselmann@gmail.com>
          *
+         * @param int padding The amount of time, in milliseconds, to delay
+         * another transition from firing.
+         *
          * @return void
          */
-        this.prevSection = function() {
+        this.prevSection = function(padding) {
 
             // do not move to a non-existent previous section
             if (self.curIndex === 0) {
                 return false;
             }
+
+            // default to the class defined value
+            padding = padding || self.config.transDelay;
 
             // flag that we are animating and remove that flag with a little
             // padding added onto the animDur property
@@ -389,7 +504,10 @@
                 prevSection.className = prevClasses.replace(/\s*sps-up/, "");
 
                 // clear animating status when it's done
-                setTimeout(self.doneAnimating, self.animDur + self.animDurPad);
+                setTimeout(
+                    self.doneAnimating,
+                    self.animDur + self.config.transDelay
+                );
             }
 
             // set the new section index and section
@@ -469,6 +587,177 @@
     }
 
     /**
+     * The MobileHelper class is used adapt the scrolling to mobile.
+     *
+     * @author JohnG <john.gieselmann@gmail.com>
+     */
+    function MobileHelper(caller) {
+
+        // retain scope
+        var self = this;
+
+        /**
+         * The minimum percentage of the window height to consider this a swipe.
+         * @var float deltaMin
+         */
+        this.deltaMin = .15;
+
+        /**
+         * Retain the starting point of a touch movement on the X and Y axis.
+         * @var int startX
+         * @var int startY
+         */
+        this.startX = 0;
+        this.startY = 0;
+
+        /**
+         * Retain the distance of a touch movement.
+         * @var int deltaX
+         * @var int deltaY
+         */
+        this.deltaX = 0;
+        this.deltaY = 0;
+
+        /**
+         * Keep track of the plane on which the touch is moving.
+         * @var str plane
+         */
+        this.plane = null;
+
+        /**
+         * Detect the direction of a swipe.
+         *
+         * @author JohnG <john.gieselmann@gmail.com>
+         *
+         * @param e obj The touch event.
+         *
+         * @return obj|bool out If a seemingly intentional swipe has been detected,
+         * return an object with the swipe info, otherwise false.
+         *   out = {
+         *       "dir"    : ["up"|"down"|"left"|"right"|false],
+         *       "startX" : // the starting X axis point
+         *       "startY" : // the starting Y axis point
+         *       "deltaX" : // the distance traveled for X
+         *       "deltaY" : // the distance traveled for Y
+         *       "endX"   : // the ending X axis point
+         *       "endY"   : // the ending Y axis point
+         *   }
+         */
+        this.detectSwipe = function(e) {
+
+            // get the touch changes
+            var touchObj = e.changedTouches[0];
+
+            // set the default output to false
+            var out = false;
+
+            switch (e.type) {
+                case "touchstart":
+                    self.startX = touchObj.clientX;
+                    self.startY = touchObj.clientY;
+                    break;
+
+                case "touchmove":
+                    self.deltaX = parseInt(touchObj.clientX) - self.startX;
+                    self.deltaY = parseInt(touchObj.clientY) - self.startY;
+
+                    // on which plane are we scrolling?
+                    if (Math.abs(self.deltaX) > Math.abs(self.deltaY)) {
+                        // keep track on the horizontal plane
+                        self.plane = "horizontal";
+                    } else {
+                        // keep track on the vertical plane
+                        self.plane = "vertical";
+                    }
+
+                    break;
+
+                case "touchend":
+
+                    // update the output since we are at the end of our movement
+                    out = {
+                        "dir"    : false,
+                        "startx" : self.startX,
+                        "starty" : self.startY,
+                        "deltax" : self.deltaX,
+                        "deltay" : self.deltaY,
+                        "endx"   : touchObj.clientX,
+                        "endy"   : touchObj.clientY
+                    };
+
+                    // check for intentional distance traveled on the swipe
+                    // and return whether or not this should count
+                    switch (self.plane) {
+
+                        case "horizontal":
+
+                            // check distance first and get out early if not
+                            // far enough
+                            if (  Math.abs(self.deltaX)
+                                < (self.deltaMin * window.innerWidth)
+                            ) {
+                                return out;
+                            }
+
+                            // return the direction
+                            if (self.deltaX > 0) {
+                                out.dir = "right";
+                            } else {
+                                out.dir = "left";
+                            }
+
+                            break;
+
+                        case "vertical":
+
+                            // check distance first and get out early if not
+                            // far enough
+                            if (  Math.abs(self.deltaY)
+                                < (self.deltaMin * window.innerHeight)
+                            ) {
+                                return out;
+                            }
+
+                            // return the direction
+                            if (self.deltaY > 0) {
+                                out.dir = "down";
+                            } else {
+                                out.dir = "up";
+                            }
+
+                            break;
+                    }
+
+                    // reset the values
+                    self.startX = 0;
+                    self.startY = 0;
+                    self.deltaX = 0;
+                    self.deltaY = 0;
+
+                    break;
+            }
+
+            // return the output
+            return out;
+
+        };
+
+        this.touchStart = function(e) {
+            console.log(e.type);
+            self.startY = e.changedTouches[0];
+            e.preventDefault();
+        };
+
+        this.touchMove = function(e) {
+
+        };
+
+        this.touchEnd = function(e) {
+
+        };
+    }
+
+    /**
      * A utility class to help out our scrolling class.
      *
      * @author JohnG <john.gieselmann@gmail.com>
@@ -518,6 +807,18 @@
             // no support found
             return false;
         };
+
+        /**
+         * Test whether or not this is a touch event compatible device.
+         * @var bool touch
+         */
+        this.touch = /Android|BlackBerry|iPad|iPhone|iPod|Opera Mini/.test(navigator.userAgent);
+
+        /**
+         * Test for IE Mobile browser.
+         * @var bool ieMobile
+         */
+        this.ieMobile = /IEMobile/.test(navigator.userAgent);
     }
 
     // assign the class to the window

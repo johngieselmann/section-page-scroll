@@ -44,14 +44,36 @@ Instantiate and initialize the class in your JavaScript with the configuration.
 // this is the default configuration, if you do not plan on changing things
 // this is not necessary to pass in
 var config = {
-    "jsAnimate"       : false,
-    "reverseSections" : false,
-    "sectionClass"    : "js-sps-section",
-    "zIndexStart"     : 9999
+    "jsAnimate"        : false,
+    "sectionClass"     : "js-sps-section",
+    "transDelay"       : 200,
+    "transDelayScroll" : 800,
+    "zIndexStart"      : 9999
 };
 
 // instantiate and initialize
 var sps = new window.SectionPageScroll();
 sps.init(config);
-
 ```
+
+## Configuration
+
+- **jsAnimate** *bool*: Force JavaScript animation with bool true.
+    - *Default*: false
+- **sectionClass** *str*: The class name for the sections that act as
+  pages.
+    - *Default*: js-sps-section
+
+- **transDelay* *int*: The time, in milliseconds, added to the duration
+  of the transition to prevent another transition from firing too
+  soon.
+    - *Default*: 200
+
+- **transDelayScroll** *int*: The time, in milliseconds, added to the
+  duration of the transition to prevent another transition from
+  firing too soon when scrolling on a non-mobile browser.
+    - *Default*: 800
+
+- **zIndexStart *int*: The starting point for setting the z-index
+  of the sections to layer them properly.
+    - *Default*: 9999
