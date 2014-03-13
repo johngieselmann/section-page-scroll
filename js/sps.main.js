@@ -21,6 +21,9 @@
          * The configuration for the class.
          * @var obj config
          *
+         * - jsAnimate bool: Force JavaScript animation with bool true.
+         *   Default: false
+         *
          * - reverseSections bool: Whether or not to detach and reattach the
          *   sections in reverse order. If false, we assign a z-index to
          *   visually order them without manipulating the DOM.
@@ -37,6 +40,7 @@
          *   - Default: 9999
          */
         this.config = {
+            "jsAnimate"       : false,
             "reverseSections" : false,
             "sectionClass"    : "js-sps-section",
             "zIndexStart"     : 9999
@@ -85,13 +89,31 @@
          * firing the next animation too soon.
          * @var int animDurPad
          */
-        this.animDurPad = 200;
+        this.animDurPad = 800;
+
+        /**
+         * The interval duration in milliseconds for the JavaScript animation.
+         * @var int jsAnimInterval
+         */
+        this.jsAnimInterval = 10;
+
+        /**
+         * The pixel / millisecond animation rate for JavaScript animation.
+         * @var int jsAnimRate
+         */
+        this.jsAnimRate = false;
 
         /**
          * A flag that is set while we are moving between sections.
          * @var bool animating
          */
         this.animating = false;
+
+        /**
+         * This is the interval used to track the manual JavaScript animation.
+         * @var int interval
+         */
+        this.interval = false;
 
         /**
          * Initialize the class.
@@ -120,6 +142,10 @@
             } else {
                 self.setZIndex();
             }
+
+            // calculate the rate of movement for JavaScript animation
+            self.jsAnimRate = (window.innerHeight / self.animDur)
+                * self.jsAnimInterval;
 
             // set the current section to the top section in the DOM
             self.curSection = self.sections[0];
@@ -170,7 +196,7 @@
             } else if (document.addEventListener) {
                 // WC3 browsers
                 document.addEventListener(self.mwEvent, self.handleEvent, false);
-                document.addEventListener("onkeydown", self.handleEvent);
+                document.addEventListener("keydown", self.handleEvent);
             }
 
 //            window.onmousewheel = self.handleEvent;
@@ -199,7 +225,7 @@
             } else if (document.addEventListener) {
                 // WC3 browsers
                 document.removeEventListener(self.mwEvent, self.handleEvent, false);
-                document.removeEventListener("onkeydown", self.handleEvent);
+                document.removeEventListener("keydown", self.handleEvent);
             }
         };
 
@@ -310,9 +336,19 @@
             // padding added onto the animDur property
             self.startAnimating();
 
-            if (self.transSupported) {
+            if (!self.transSupported || self.config.jsAnimate === true) {
+
+                var section = self.curSection;
+                self.interval = setInterval(function() {
+                    self.jsAnimateUp(section);
+                }, self.jsAnimInterval);
+
+            } else {
                 var classes = self.curSection.className;
                 self.curSection.className = classes + " sps-up";
+
+                // clear animating status when it's done
+                setTimeout(self.doneAnimating, self.animDur + self.animDurPad);
             }
 
             // set the new section index and section
@@ -338,16 +374,72 @@
             // padding added onto the animDur property
             self.startAnimating();
 
+            // get the previous section to bring down
+            var prevSection = self.sections[self.curIndex - 1];
+
             // remove the class from the previous section off the screen
-            if (self.transSupported) {
-                var prevSection = self.sections[self.curIndex - 1];
+            if (!self.transSupported || self.config.jsAnimate === true) {
+
+                self.interval = setInterval(function() {
+                    self.jsAnimateDown(prevSection);
+                }, self.jsAnimInterval);
+
+            } else {
                 var prevClasses = prevSection.className;
-                prevSection.className = prevClasses.replace("sps-up", "");
+                prevSection.className = prevClasses.replace(/\s*sps-up/, "");
+
+                // clear animating status when it's done
+                setTimeout(self.doneAnimating, self.animDur + self.animDurPad);
             }
 
             // set the new section index and section
             self.curIndex -= 1;
             self.curSection = self.sections[self.curIndex];
+        };
+
+        this.prevTop = 0;
+
+        /**
+         * Manually animate the transition to the next section. This is called
+         * on an interval until complete.
+         *
+         * @author JohnG <john.gieselmann@gmail.com>
+         *
+         * @return void
+         */
+        this.jsAnimateUp = function(section) {
+
+            // TODO REPLACE WITH WORKING JS ANIMATION
+            section.style.top = "-100%";
+            clearInterval(self.interval);
+            self.doneAnimating();
+            return true;
+
+//            var pos = section.getBoundingClientRect();
+//            console.log(section.style.top, pos.bottom);
+//            section.style.top = (section.style.top - self.jsAnimRate).toString() + "px";
+//
+//            if (pos.bottom <= 0) {
+//                self.curSection.style.top = "-100%";
+//                self.doneAnimating();
+//                clearInterval(self.interval);
+//            }
+        };
+
+        /**
+         * Manually animate the transition to the previous section. This is called
+         * on an interval until complete.
+         *
+         * @author JohnG <john.gieselmann@gmail.com>
+         *
+         * @return void
+         */
+        this.jsAnimateDown = function() {
+            // TODO REPLACE WITH WORKING JS ANIMATION
+            section.style.top = "0px";
+            clearInterval(self.interval);
+            self.doneAnimating();
+            return true;
         };
 
         /**
@@ -360,7 +452,6 @@
         this.startAnimating = function() {
             self.animating = true;
             self.unbindEvents();
-            setTimeout(self.doneAnimating, self.animDur + self.animDurPad);
         };
 
         /**
