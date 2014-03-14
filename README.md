@@ -1,7 +1,10 @@
 # Section Page Scroll
 
 This is a nifty little website scroller that will create page like sections
-that slide up/down on scroll as if moving between pages.
+that slide up/down on scroll or keypress as if moving between pages.
+
+Currently, it supports modern desktop browsers and touch event browsers...
+Essentially, pretty much everything except IE Mobile, but that is coming.
 
 Example: http://johngieselmann.com/section-page-scroll/
 
@@ -18,7 +21,7 @@ Include the sps.main.css file in your HTML page.
 <link rel="stylesheet" type="text/css" href="/path/to/sps.main.css" />
 ```
 
-Add the "section-page-scroller" class to the <body> tag.
+Add the "section-page-scroller" class to the body tag.
 ```
 <body class="section-page-scroller">
     <!-- content -->
@@ -58,22 +61,23 @@ sps.init(config);
 
 ## Configuration
 
-- **jsAnimate** *bool*: Force JavaScript animation with bool true.
-    - *Default*: false
-- **sectionClass** *str*: The class name for the sections that act as
-  pages.
-    - *Default*: js-sps-section
+- **jsAnimate** *bool* - Force JavaScript animation with bool true.
+    - *Default* = false
 
-- **transDelay* *int*: The time, in milliseconds, added to the duration
+- **sectionClass** *str* - The class name for the sections that act as
+  pages.
+    - *Default* = "js-sps-section"
+
+- **transDelay** *int* - The time, in milliseconds, added to the duration
   of the transition to prevent another transition from firing too
   soon.
-    - *Default*: 200
+    - *Default* = 200
 
-- **transDelayScroll** *int*: The time, in milliseconds, added to the
+- **transDelayScroll** *int* - The time, in milliseconds, added to the
   duration of the transition to prevent another transition from
   firing too soon when scrolling on a non-mobile browser.
-    - *Default*: 800
+    - *Default* = 800
 
-- **zIndexStart *int*: The starting point for setting the z-index
+- **zIndexStart** *int* - The starting point for setting the z-index
   of the sections to layer them properly.
-    - *Default*: 9999
+    - *Default* = 9999
