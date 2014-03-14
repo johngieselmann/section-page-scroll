@@ -56,6 +56,7 @@ Instantiate and initialize the class in your JavaScript with the configuration.
 // this is the default configuration, if you do not plan on changing things
 // this is not necessary to pass in
 var config = {
+    "arrowKeys"        : true,
     "jsAnimate"        : false,
     "sectionClass"     : "js-sps-section",
     "transDelay"       : 200,
@@ -70,12 +71,14 @@ sps.init(config);
 
 ## Configuration
 
-- **jsAnimate** *bool* - Force JavaScript animation with bool true.
-    - *Default* = false
+- **arrowKeys** bool (default: true) Whether or not to allow section
+  navigation with the arrow keys.
 
-- **sectionClass** *str* - The class name for the sections that act as
-  pages.
-    - *Default* = "js-sps-section"
+- **jsAnimate** bool *(default: false)* - Force JavaScript animation with
+bool true.
+
+- **sectionClass** str (default: "js-sps-section") - The class name for the
+sections that act as pages.
 
 - **transDelay** *int* - The time, in milliseconds, added to the duration
   of the transition to prevent another transition from firing too

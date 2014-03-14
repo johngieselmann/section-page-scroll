@@ -27,6 +27,9 @@
          * The configuration for the class.
          * @var obj config
          *
+         * - arrowKeys bool (default: true) Whether or not to allow section
+         *   navigation with the arrow keys.
+         *
          * - jsAnimate bool: Force JavaScript animation with bool true.
          *   Default: false
          *
@@ -49,6 +52,7 @@
          *   - Default: 9999
          */
         this.config = {
+            "arrowKeys"        : true,
             "jsAnimate"        : false,
             "sectionClass"     : "js-sps-section",
             "transDelay"       : 200,
@@ -239,9 +243,12 @@
                         "on" + self.mwEvent,
                         self.handleBrowserEvent
                     );
-                    document.attachEvent(
-                        "onkeydown",self.handleBrowserEvent
-                    );
+
+                    if (self.config.arrowKeys) {
+                        document.attachEvent(
+                            "onkeydown",self.handleBrowserEvent
+                        );
+                    }
 
                 } else if (document.addEventListener) {
 
@@ -284,9 +291,12 @@
                     "on" + self.mwEvent,
                     self.handleBrowserEvent
                 );
-                document.detachEvent(
-                    "onkeydown",self.handleBrowserEvent
-                );
+
+                if (self.config.arrowKeys) {
+                    document.detachEvent(
+                        "onkeydown",self.handleBrowserEvent
+                    );
+                }
 
             } else if (document.removeEventListener) {
 
