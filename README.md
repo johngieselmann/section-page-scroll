@@ -11,7 +11,7 @@ Example: http://johngieselmann.com/section-page-scroll/
 ## Requirements
 
 - JavaScript (no jQuery... believe it)
-- Browser that supports CSS transitions
+- Browser that supports CSS transitions (JS animations not currently working)
 
 ## Setup
 
@@ -71,25 +71,21 @@ sps.init(config);
 
 ## Configuration
 
-- **arrowKeys** bool (default: true) Whether or not to allow section
+- **arrowKeys** bool *(default: true)* Whether or not to allow section
   navigation with the arrow keys.
 
-- **jsAnimate** bool *(default: false)* - Force JavaScript animation with
-bool true.
+- **jsAnimate** bool *(default: false)* Force JavaScript animation with bool
+  true.
 
-- **sectionClass** str (default: "js-sps-section") - The class name for the
-sections that act as pages.
+- **sectionClass** str *(default: "js-sps-section")* The class name for the
+  sections that act as pages.
 
-- **transDelay** *int* - The time, in milliseconds, added to the duration
-  of the transition to prevent another transition from firing too
-  soon.
-    - *Default* = 200
+- **transDelay** int *(default: 200)* The time, in milliseconds, added to the
+  duration of the transition to prevent another transition from firing too soon.
 
-- **transDelayScroll** *int* - The time, in milliseconds, added to the
-  duration of the transition to prevent another transition from
+- **transDelayScroll** int *(default: 800)* The time, in milliseconds, added
+  to the duration of the transition to prevent another transition from
   firing too soon when scrolling on a non-mobile browser.
-    - *Default* = 800
 
-- **zIndexStart** *int* - The starting point for setting the z-index
-  of the sections to layer them properly.
-    - *Default* = 9999
+- **zIndexStart** int *(default: 9999)* The starting point for setting the
+  z-index of the sections to layer them properly.
