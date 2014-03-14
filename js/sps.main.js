@@ -161,14 +161,14 @@
             self.captureElements();
 
             // add the classes to the sections for identification
-            for (var i in self.sections) {
+            for (var i = 0; i < self.sections.length; i++) {
                 var section = self.sections[i];
-                section.className = section.className += " sps-sec-" + i;
+                section.className = section.className += " sps-sec-" + (i + 1);
             }
 
             // now set the navigation
             if (self.config.nav) {
-                self.setNav();
+                self.buildNav();
             }
 
             // reverse the sections first if config is set to do so
@@ -203,7 +203,6 @@
         this.captureElements = function() {
 
             // get the navigation, and if we can't find it, update the config
-            //jam
             var nav = document.getElementsByClassName(self.config.navClass);
             if (!nav.length) {
                 self.config.nav = false;
@@ -218,23 +217,28 @@
         };
 
         /**
-         * Set the navigation for each section.
+         * Build the navigation for each section.
          *
          * @author JohnG <john.gieselmann@gmail.com>
          *
          * @return void
          */
-        this.setNav = function() {
+        this.buildNav = function() {
             // get the unordered list and it's html
             var ul = self.nav.getElementsByTagName("ul");
             var navLink = ul[0].innerHTML;
 
             // create the new links as a string
             var newLinks = "";
-            for (var i in self.sections) {
-                newLinks += navLink.replace("<%section%>", "sps-sec-" + i);
+            for (var i = 0; i < self.sections.length; i++) {
+
+                // relate this link to its ordered section
+                newLinks += navLink.replace(
+                    "{%section%}",
+                    "sps-sec-" + (i + 1)
+                );
+
             }
-            console.log(newLinks);
 
             // reassign the html of the unordered list
             ul[0].innerHTML = newLinks;
@@ -249,9 +253,15 @@
          */
         this.bindEvents = function() {
 
-            // bind the events based on the device
+            // nav bar navigation links
+            var links = self.config.nav
+                ? self.nav.getElementsByTagName("a")
+                : false;
+
+            // bind the events based on the device/supported event types
             if (self.util.touch) {
 
+                // swipe navigation
                 document.addEventListener(
                     "touchstart",
                     self.detectSwipe,
@@ -267,6 +277,11 @@
                     self.detectSwipe,
                     false
                 );
+
+                // bind the nav bar
+                if (links) {
+                    self.bindEventTags(links, "touchend", self.gotoSection);
+                }
 
             } else if (self.util.ieMobile) {
 
@@ -286,6 +301,11 @@
                     self.detectSwipe,
                     false
                 );
+
+                // bind the nav bar
+                if (links) {
+                    self.bindEventTags(links, "MSPointerUp", self.gotoSection);
+                }
 
             } else {
 
@@ -323,7 +343,44 @@
                         self.handleBrowserEvent,
                         false
                     );
+                }
 
+                // bind the nav bar
+                if (links) {
+                    self.bindEventTags(links, "click", self.gotoSection);
+                }
+
+            }
+
+        };
+
+        /**
+         * Bind an event to an array of tags.
+         *
+         * @author JohnG <john.gieselmann@gmail.com>
+         *
+         * @param arr tags The array of DOM elements.
+         *
+         * @param str type The type of event to bind. If using attachEvent,
+         * "on" is prepended to the type.
+         *
+         * @param obj listener The listener that receives the event.
+         *
+         * @param bool useCapture Googleable... we default to false.
+         *
+         * @return void
+         */
+        this.bindEventTags = function(tags, type, listener, useCapture) {
+
+            // set the useCapture
+            useCapture = useCapture || false;
+
+            // loop through the tags and bind the event
+            for (var i = 0; i < tags.length; i++) {
+                if (document.attachEvent) {
+                    tags[i].attachEvent("on" + type, listener, useCapture);
+                } else {
+                    tags[i].addEventListener(type, listener, useCapture);
                 }
             }
         };
@@ -590,7 +647,85 @@
             self.curSection = self.sections[self.curIndex];
         };
 
-        this.prevTop = 0;
+        /**
+         * Navigate to a specific section.
+         *
+         * @author JohnG <john.gieselmann@gmail.com>
+         *
+         * @param obj e The event object.
+         *
+         * @return void
+         */
+        this.gotoSection = function(e) {
+
+            var targetClass = e.target.getAttribute("rel");
+
+            // keep track of the sections before and after the targeted
+            // section
+            var secBefore = [];
+            var secAfter = [];
+
+            // keep track of the section index so we can properly set the
+            // before and after, start obnoxiously high to avoid collision
+            var secIndex = 99999999;
+
+            // loop through all the sections and find our target and all of
+            // its preceding and proceeding sections
+            for (var i = 0; i < self.sections.length; i++) {
+                var section = self.sections[i];
+
+                // this section matches the nav rel attribute, gotcha
+                if (self.sections[i].className.match(targetClass)) {
+                    var targSection = self.sections[i];
+                    secIndex = i;
+
+                    // check that this is not the current section
+                    if (secIndex === self.curIndex) {
+                        return false;
+                    } else {
+                        continue;
+                    }
+                }
+
+                // not our target, flag as before or after
+                if (i < secIndex) {
+                    secBefore.push(section);
+                } else {
+                    secAfter.push(section);
+                }
+            }
+
+            // if the new section is above the current section, remove all
+            // the transition classes below the target
+            if (secIndex < self.curIndex) {
+
+                // go through the sections after in reverse order so it is
+                // the natural progression
+                for (var j = (secAfter.length - 1); j >= 0; j--) {
+                    secAfter[j].className = secAfter[j].className
+                        .replace(/\s*sps-up/, "");
+                }
+
+                // now remove the target section name
+                targSection.className = targSection.className
+                    .replace(/\s*sps-up/, "");
+
+            } else {
+
+                for (var k = 0; k < secBefore.length; k++) {
+                    if (secBefore[k].className.match("sps-up")) {
+                        continue;
+                    } else {
+                        secBefore[k].className += " sps-up";
+                    }
+                }
+            }
+
+            // update the current section and index
+            self.curSection = targSection;
+            self.curIndex = secIndex;
+
+        };
 
         /**
          * Manually animate the transition to the next section. This is called
