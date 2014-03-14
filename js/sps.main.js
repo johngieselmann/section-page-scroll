@@ -27,20 +27,25 @@
          * The configuration for the class.
          * @var obj config
          *
+         * - activeNavClass str (default: "sps-active") The class applied to
+         *   the active navigation link.
+         *
+         * - activeSectionClass str (default: "sps-active") The class
+         *   applied to the active section.
+         *
          * - arrowKeys bool (default: true) Whether or not to allow section
          *   navigation with the arrow keys.
-         *
-         * - jsAnimate bool (default: false) Force JavaScript animation with
-         *   bool true.
          *
          * - nav bool (default: true) Whether or not to include the navigation
          *   bar.
          *
          * - navClass str (default: "js-sps-nav") The class name for the
-         *   sections that act as pages.
+         *   navigation menu. This is only used as a selector for finding
+         *   the nav menu.
          *
-         * - sectionClass str (default: "js-sps-section") The class name for
-         *   the sections that act as pages.
+         * - sectionClass str *(default: "js-sps-section") The class name
+         *   for the sections that are being transitioned. This is only used
+         *   as a selector for finding the sections.
          *
          * - transDelay int (default: 200) The time, in milliseconds, added
          *   to the duration of the transition to prevent another transition
@@ -55,27 +60,34 @@
          *   the z-index of the sections to layer them properly.
          */
         this.config = {
-            "arrowKeys"        : true,
-            "jsAnimate"        : false,
-            "nav"              : true,
-            "navClass"         : "js-sps-nav",
-            "sectionClass"     : "js-sps-section",
-            "transDelay"       : 200,
-            "transDelayScroll" : 800,
-            "zIndexStart"      : 9999
+            "arrowKeys"          : true,
+            "activeNavClass"     : "sps-active",
+            "activeSectionClass" : "sps-active",
+            "nav"                : true,
+            "navClass"           : "js-sps-nav",
+            "sectionClass"       : "js-sps-section",
+            "transDelay"         : 200,
+            "transDelayScroll"   : 800,
+            "zIndexStart"        : 9999
         };
 
         /**
-         * Retain the nav element for quick recall.
+         * The navigation bar element.
          * @var obj nav
          */
         this.nav = null;
 
         /**
-         * The template for the navigation links.
-         * @var str navLink
+         * All of the navigation link elements.
+         * @var arr navLinks
          */
-//        this.navLink = "<li><a rel='<%section%>'></a></li>";
+        this.navLinks = null;
+
+        /**
+         * The current navigation link element.
+         * @var obj curNavLink
+         */
+        this.curNavLink = null;
 
         /**
          * Retain the sections elements for quick recall.
@@ -109,35 +121,17 @@
         this.transSupported = false;
 
         /**
-         * The duration of the animation in milliseconds. If relying on CSS
+         * The duration of the transition in milliseconds. If relying on CSS
          * transitions, this MUST match the transition length to work properly.
-         * @var int animDur
+         * @var int transDur
          */
-        this.animDur = 500;
-
-        /**
-         * The interval duration in milliseconds for the JavaScript animation.
-         * @var int jsAnimInterval
-         */
-        this.jsAnimInterval = 10;
-
-        /**
-         * The pixel / millisecond animation rate for JavaScript animation.
-         * @var int jsAnimRate
-         */
-        this.jsAnimRate = false;
+        this.transDur = 500;
 
         /**
          * A flag that is set while we are moving between sections.
-         * @var bool animating
+         * @var bool transActive
          */
-        this.animating = false;
-
-        /**
-         * This is the interval used to track the manual JavaScript animation.
-         * @var int interval
-         */
-        this.interval = false;
+        this.transActive = false;
 
         /**
          * Initialize the class.
@@ -178,19 +172,14 @@
                 self.setZIndex();
             }
 
-            // calculate the rate of movement for JavaScript animation
-            self.jsAnimRate = (window.innerHeight / self.animDur)
-                * self.jsAnimInterval;
-
-            // set the current section to the top section in the DOM
-            self.curSection = self.sections[0];
-
             // bind the events for the class
             self.bindEvents();
 
             // check for css transition support
             self.transSupported = self.util.supportsCssProp("transition");
 
+            // finally, set the current section and navigation
+            self.setCurrent(0);
         };
 
         /**
@@ -224,7 +213,8 @@
          * @return void
          */
         this.buildNav = function() {
-            // get the unordered list and it's html
+
+            // get the nav unordered list and it's html
             var ul = self.nav.getElementsByTagName("ul");
             var navLink = ul[0].innerHTML;
 
@@ -237,11 +227,13 @@
                     "{%section%}",
                     "sps-sec-" + (i + 1)
                 );
-
             }
 
             // reassign the html of the unordered list
             ul[0].innerHTML = newLinks;
+
+            // set the navigation links property
+            self.navLinks = ul[0].getElementsByTagName("a");
         };
 
         /**
@@ -447,7 +439,7 @@
             e.preventDefault();
 
             // we are currently transitioning, give it a second
-            if (self.animating) {
+            if (self.transActive) {
                 return false;
             }
 
@@ -515,8 +507,8 @@
             // make sure we have the right event
             e = window.event || e;
 
-            // if we are currently animating between sections stop progress
-            if (self.animating) {
+            // if we are currently transitioning between sections stop progress
+            if (self.transActive) {
                 return false;
             }
 
@@ -558,12 +550,12 @@
          *
          * @author JohnG <john.gieselmann@gmail.com>
          *
-         * @param int padding The amount of time, in milliseconds, to delay
+         * @param int delay The amount of time, in milliseconds, to delay
          * another transition from firing.
          *
          * @return void
          */
-        this.nextSection = function(padding) {
+        this.nextSection = function(delay) {
 
             // do not move to a non-existent next section
             if ((self.curIndex + 1) === self.sections.length) {
@@ -571,30 +563,18 @@
             }
 
             // default to the class defined value
-            padding = padding || self.config.transDelay;
+            delay = delay || self.config.transDelay;
 
-            // flag that we are animating and remove that flag with a little
-            // padding added onto the animDur property
-            self.startAnimating();
+            // flag that we are starting the transition and add the class
+            // that will move the section up
+            self.startTransition();
+            self.curSection.className = self.curSection.className + " sps-up";
 
-            if (!self.transSupported || self.config.jsAnimate === true) {
+            // clear transitioning status when it's done
+            setTimeout(self.doneTransition, self.transDur + delay);
 
-                var section = self.curSection;
-                self.interval = setInterval(function() {
-                    self.jsAnimateUp(section);
-                }, self.jsAnimInterval);
-
-            } else {
-                var classes = self.curSection.className;
-                self.curSection.className = classes + " sps-up";
-
-                // clear animating status when it's done
-                setTimeout(self.doneAnimating, self.animDur + padding);
-            }
-
-            // set the new section index and section
-            self.curIndex += 1;
-            self.curSection = self.sections[self.curIndex];
+            // update the current elements
+            self.setCurrent(self.curIndex + 1);
         };
 
         /**
@@ -602,12 +582,12 @@
          *
          * @author JohnG <john.gieselmann@gmail.com>
          *
-         * @param int padding The amount of time, in milliseconds, to delay
+         * @param int delay The amount of time, in milliseconds, to delay
          * another transition from firing.
          *
          * @return void
          */
-        this.prevSection = function(padding) {
+        this.prevSection = function(delay) {
 
             // do not move to a non-existent previous section
             if (self.curIndex === 0) {
@@ -615,36 +595,20 @@
             }
 
             // default to the class defined value
-            padding = padding || self.config.transDelay;
+            delay = delay || self.config.transDelay;
 
-            // flag that we are animating and remove that flag with a little
-            // padding added onto the animDur property
-            self.startAnimating();
-
-            // get the previous section to bring down
+            // flag that we are starting the transition and remove the class
+            // that will bring down the previous section
+            self.startTransition();
             var prevSection = self.sections[self.curIndex - 1];
+            prevSection.className = prevSection.className
+                .replace(/\s*sps-up/, "");
 
-            // remove the class from the previous section off the screen
-            if (!self.transSupported || self.config.jsAnimate === true) {
+            // clear transitioning status when it's done
+            setTimeout(self.doneTransition, self.transDur + delay);
 
-                self.interval = setInterval(function() {
-                    self.jsAnimateDown(prevSection);
-                }, self.jsAnimInterval);
-
-            } else {
-                var prevClasses = prevSection.className;
-                prevSection.className = prevClasses.replace(/\s*sps-up/, "");
-
-                // clear animating status when it's done
-                setTimeout(
-                    self.doneAnimating,
-                    self.animDur + self.config.transDelay
-                );
-            }
-
-            // set the new section index and section
-            self.curIndex -= 1;
-            self.curSection = self.sections[self.curIndex];
+            // update the current elements
+            self.setCurrent(self.curIndex - 1);
         };
 
         /**
@@ -657,6 +621,14 @@
          * @return void
          */
         this.gotoSection = function(e) {
+
+            // avoid stacking events
+            if (self.transActive) {
+                return false;
+            }
+
+            // start the transition process
+            self.startTransition();
 
             var targetClass = e.target.getAttribute("rel");
 
@@ -681,6 +653,7 @@
 
                     // check that this is not the current section
                     if (secIndex === self.curIndex) {
+                        self.doneTransition();
                         return false;
                     } else {
                         continue;
@@ -721,76 +694,73 @@
                 }
             }
 
-            // update the current section and index
-            self.curSection = targSection;
-            self.curIndex = secIndex;
+            // allow transitioning again after the transition is complete
+            setTimeout(self.doneTransition, self.transDelay);
 
+            // update the current elements
+            self.setCurrent(secIndex);
         };
 
         /**
-         * Manually animate the transition to the next section. This is called
-         * on an interval until complete.
+         * Set the current section and nav by the passed in index.
+         *
+         * @author JohnG <john.gieselmann@gmail.com>
+         *
+         * @param int index The index of the current section and nav.
+         *
+         * @return void
+         */
+        this.setCurrent = function(index) {
+            self.curIndex = index;
+            self.curSection = self.sections[index];
+
+            // remove the "current" class from the sections
+            var secRE = new RegExp("\\s*" + self.config.activeSectionClass);
+            for (var i = 0; i < self.sections.length; i++) {
+                self.sections[i].className = self.sections[i].className
+                    .replace(secRE, "");
+            }
+
+            // set the "current" class to the current section
+            self.curSection.className = self.curSection.className
+                + " " + self.config.activeSectionClass;
+
+            if (self.config.nav) {
+                self.curNavLink = self.navLinks[index];
+
+                var navRE = new RegExp("\\s*" + self.config.activeNavClass);
+                for (var i = 0; i < self.navLinks.length; i++) {
+                    self.navLinks[i].className = self.navLinks[i].className
+                        .replace(navRE, "");
+                }
+
+                // set the "current" class to the current section
+                self.curNavLink.className = self.curNavLink.className
+                    + " " + self.config.activeNavClass;
+            }
+        };
+
+        /**
+         * Called when the transition process has begun.
          *
          * @author JohnG <john.gieselmann@gmail.com>
          *
          * @return void
          */
-        this.jsAnimateUp = function(section) {
-
-            // TODO REPLACE WITH WORKING JS ANIMATION
-            section.style.top = "-100%";
-            clearInterval(self.interval);
-            self.doneAnimating();
-            return true;
-
-//            var pos = section.getBoundingClientRect();
-//            console.log(section.style.top, pos.bottom);
-//            section.style.top = (section.style.top - self.jsAnimRate).toString() + "px";
-//
-//            if (pos.bottom <= 0) {
-//                self.curSection.style.top = "-100%";
-//                self.doneAnimating();
-//                clearInterval(self.interval);
-//            }
-        };
-
-        /**
-         * Manually animate the transition to the previous section. This is called
-         * on an interval until complete.
-         *
-         * @author JohnG <john.gieselmann@gmail.com>
-         *
-         * @return void
-         */
-        this.jsAnimateDown = function() {
-            // TODO REPLACE WITH WORKING JS ANIMATION
-            section.style.top = "0px";
-            clearInterval(self.interval);
-            self.doneAnimating();
-            return true;
-        };
-
-        /**
-         * Called when the animation process has begun.
-         *
-         * @author JohnG <john.gieselmann@gmail.com>
-         *
-         * @return void
-         */
-        this.startAnimating = function() {
-            self.animating = true;
+        this.startTransition = function() {
+            self.transActive = true;
             self.unbindEvents();
         };
 
         /**
-         * Called when the animation between sections is complete.
+         * Called when the transition between sections is complete.
          *
          * @author JohnG <john.gieselmann@gmail.com>
          *
          * @return void
          */
-        this.doneAnimating = function() {
-            self.animating = false;
+        this.doneTransition = function() {
+            self.transActive = false;
             self.bindEvents();
         };
 

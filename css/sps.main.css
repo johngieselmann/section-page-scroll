@@ -20,12 +20,23 @@
 
 .sps-nav ul li a {
     display: block;
-    width: 1.5em;
-    height: 1.5em;
+    width: 1.2em;
+    height: 1.2em;
+    margin: .3em;
 
     cursor: pointer;
     background: #444;
+
+    -webkit-border-radius: 50% 50% 50% 50%;
+    -moz-border-radius: 50% 50% 50% 50%;
     border-radius: 50% 50% 50% 50%;
+
+    transition: all 250ms ease-in;
+}
+
+.sps-nav ul li a.sps-active {
+    margin: 0;
+    padding: .3em;
 }
 
 /* ==========================================================================
