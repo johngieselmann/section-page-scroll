@@ -58,6 +58,8 @@ Instantiate and initialize the class in your JavaScript with the configuration.
 var config = {
     "arrowKeys"        : true,
     "jsAnimate"        : false,
+    "nav"              : true,
+    "navClass"         : "js-sps-nav",
     "sectionClass"     : "js-sps-section",
     "transDelay"       : 200,
     "transDelayScroll" : 800,
@@ -76,6 +78,12 @@ sps.init(config);
 
 - **jsAnimate** bool *(default: false)* Force JavaScript animation with bool
   true.
+
+- **nav** bool *(default: true)* Whether or not to include the navigation
+  bar.
+
+- **navClass** str *(default: "js-sps-nav")* The class name for the
+  sections that act as pages.
 
 - **sectionClass** str *(default: "js-sps-section")* The class name for the
   sections that act as pages.
