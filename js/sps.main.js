@@ -163,9 +163,8 @@
             // now set the navigation... or destroy it
             if (self.config.nav) {
                 self.buildNav();
-            } else {
-                var nav = document.getElementsByClassName(self.config.navClass);
-                nav[0].parentElement.removeChild(nav[0]);
+            } else if (!self.config.nav && self.nav) {
+                self.nav.parentElement.removeChild(self.nav);
             }
 
             // reverse the sections first if config is set to do so
