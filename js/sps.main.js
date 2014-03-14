@@ -160,9 +160,12 @@
                 section.className = section.className += " sps-sec-" + (i + 1);
             }
 
-            // now set the navigation
+            // now set the navigation... or destroy it
             if (self.config.nav) {
                 self.buildNav();
+            } else {
+                var nav = document.getElementsByClassName(self.config.navClass);
+                nav[0].parentElement.removeChild(nav[0]);
             }
 
             // reverse the sections first if config is set to do so
@@ -1001,6 +1004,7 @@
         this.ieMobile = /IEMobile/.test(navigator.userAgent);
     }
 
-    // assign the class to the window
+    // assign the class to the window for availability elsewhere
     window.SectionPageScroll = SectionPageScroll;
+
 })(window, document, undefined);
