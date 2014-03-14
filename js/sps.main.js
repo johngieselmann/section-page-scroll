@@ -255,50 +255,46 @@
             // bind the events based on the device/supported event types
             if (self.util.touch) {
 
+                // set the default touch events
+                var touch = {
+                    "start" : "touchstart",
+                    "move"  : "touchmove",
+                    "end"   : "touchend"
+                };
+
+                // now set the IE touch events based on which browser version
+                // IE 11+ changed event types
+                if (self.util.ieTouch && self.util.ie10) {
+                    touch.start = "MSPointerDown";
+                    touch.move = "MSPointerMove";
+                    touch.end = "MSPointerUp";
+                } else if (self.util.ieTouch) {
+                    touch.start = "pointerstart";
+                    touch.move = "pointermove";
+                    touch.end = "pointerend";
+                }
+                //jam
+
                 // swipe navigation
                 document.addEventListener(
-                    "touchstart",
+                    touch.start,
                     self.detectSwipe,
                     false
                 );
                 document.addEventListener(
-                    "touchmove",
+                    touch.move,
                     self.detectSwipe,
                     false
                 );
                 document.addEventListener(
-                    "touchend",
+                    touch.end,
                     self.detectSwipe,
                     false
                 );
 
                 // bind the nav bar
                 if (links) {
-                    self.bindEventTags(links, "touchend", self.gotoSection);
-                }
-
-            } else if (self.util.ieMobile) {
-
-                // TODO - Get IE Touch events working
-                document.addEventListener(
-                    "MSPointerDown",
-                    self.detectSwipe,
-                    false
-                );
-                document.addEventListener(
-                    "MSPointerMove",
-                    self.detectSwipe,
-                    false
-                );
-                document.addEventListener(
-                    "MSPointerUp",
-                    self.detectSwipe,
-                    false
-                );
-
-                // bind the nav bar
-                if (links) {
-                    self.bindEventTags(links, "MSPointerUp", self.gotoSection);
+                    self.bindEventTags(links, touch.end, self.gotoSection);
                 }
 
             } else {
@@ -437,6 +433,7 @@
          */
         this.detectSwipe = function(e) {
 
+            //jam
             // prevent the default event
             e.preventDefault();
 
@@ -826,6 +823,7 @@
          *   }
          */
         this.detectSwipe = function(e) {
+            //jam
 
             // get the touch changes
             var touchObj = e.changedTouches[0];
@@ -991,16 +989,20 @@
         };
 
         /**
+         * Test for IE browsers.
+         * @var bool ieTouch
+         * @var bool ie10
+         */
+        this.ieTouch = /MSIE.*Touch/.test(navigator.userAgent);
+        this.ie10 = /MSIE 10/.test(navigator.userAgent);
+
+        /**
          * Test whether or not this is a touch event compatible device.
          * @var bool touch
          */
-        this.touch = /Android|BlackBerry|iPad|iPhone|iPod|Opera Mini/.test(navigator.userAgent);
+        this.touch = /Android|BlackBerry|iPad|iPhone|iPod|Opera Mini/
+            .test(navigator.userAgent) || self.ieTouch;
 
-        /**
-         * Test for IE Mobile browser.
-         * @var bool ieMobile
-         */
-        this.ieMobile = /IEMobile/.test(navigator.userAgent);
     }
 
     // assign the class to the window for availability elsewhere
