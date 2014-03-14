@@ -379,8 +379,8 @@
          */
         this.handleBrowserEvent = function(e) {
 
+            // make sure we have the right event
             e = window.event || e;
-            e.preventDefault();
 
             // if we are currently animating between sections stop progress
             if (self.animating) {
@@ -439,7 +439,6 @@
 
             // default to the class defined value
             padding = padding || self.config.transDelay;
-            console.log(padding);
 
             // flag that we are animating and remove that flag with a little
             // padding added onto the animDur property
