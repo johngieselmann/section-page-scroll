@@ -3,13 +3,22 @@
 This is a nifty little website scroller that will create page like sections
 that slide up/down on scroll or keypress as if moving between pages.
 
-Currently, it supports modern desktop browsers and touch event browsers...
-Essentially, pretty much everything except IE Mobile, but that is coming.
+Currently, it supports modern desktop browsers and touch event browsers
+(pretty much everything except IE Mobile).
 
 Example: http://johngieselmann.com/section-page-scroll/
 
+## Requirements
+
+- JavaScript (no jQuery... believe it)
+- Browser that supports CSS transitions
+
 ## Setup
+
 Clone this repository
+```
+git clone https://github.com/johngieselmann/section-page-scroll.git
+```
 
 Include the sps.main.js file in your HTML page.
 ```
