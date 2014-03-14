@@ -30,30 +30,35 @@
          * - arrowKeys bool (default: true) Whether or not to allow section
          *   navigation with the arrow keys.
          *
-         * - jsAnimate bool: Force JavaScript animation with bool true.
-         *   Default: false
+         * - jsAnimate bool (default: false) Force JavaScript animation with
+         *   bool true.
          *
-         * - sectionClass str: The class name for the sections that act as
-         *   pages.
-         *   - Default: js-sps-section
+         * - nav bool (default: true) Whether or not to include the navigation
+         *   bar.
          *
-         * - transDelay int: The time, in milliseconds, added to the duration
-         *   of the transition to prevent another transition from firing too
-         *   soon.
-         *   - Default: 200
+         * - navClass str (default: "js-sps-nav") The class name for the
+         *   sections that act as pages.
          *
-         * - transDelayScroll int: The time, in milliseconds, added to the
-         *   duration of the transition to prevent another transition from
-         *   firing too soon when scrolling on a non-mobile browser.
-         *   - Default: 800
+         * - sectionClass str (default: "js-sps-section") The class name for
+         *   the sections that act as pages.
          *
-         * - zIndexStart int: The starting point for setting the z-index
-         *   of the sections to layer them properly.
-         *   - Default: 9999
+         * - transDelay int (default: 200) The time, in milliseconds, added
+         *   to the duration of the transition to prevent another transition
+         *   from firing too soon.
+         *
+         * - transDelayScroll int (default: 800) The time, in milliseconds,
+         *   added to the duration of the transition to prevent another
+         *   transition from firing too soon when scrolling on a non-mobile
+         *   browser.
+         *
+         * - zIndexStart int (default: 9999) The starting point for setting
+         *   the z-index of the sections to layer them properly.
          */
         this.config = {
             "arrowKeys"        : true,
             "jsAnimate"        : false,
+            "nav"              : true,
+            "navClass"         : "js-sps-nav",
             "sectionClass"     : "js-sps-section",
             "transDelay"       : 200,
             "transDelayScroll" : 800,
@@ -61,7 +66,19 @@
         };
 
         /**
-         * Retain the jQuery sections for quick recall.
+         * Retain the nav element for quick recall.
+         * @var obj nav
+         */
+        this.nav = null;
+
+        /**
+         * The template for the navigation links.
+         * @var str navLink
+         */
+//        this.navLink = "<li><a rel='<%section%>'></a></li>";
+
+        /**
+         * Retain the sections elements for quick recall.
          * @var arr sections
          */
         this.sections = [];
@@ -143,6 +160,17 @@
             // capture the elements for the class
             self.captureElements();
 
+            // add the classes to the sections for identification
+            for (var i in self.sections) {
+                var section = self.sections[i];
+                section.className = section.className += " sps-sec-" + i;
+            }
+
+            // now set the navigation
+            if (self.config.nav) {
+                self.setNav();
+            }
+
             // reverse the sections first if config is set to do so
             if (self.config.reverseSections) {
                 self.reverseSections();
@@ -174,10 +202,42 @@
          */
         this.captureElements = function() {
 
+            // get the navigation, and if we can't find it, update the config
+            //jam
+            var nav = document.getElementsByClassName(self.config.navClass);
+            if (!nav.length) {
+                self.config.nav = false;
+            } else {
+                self.nav = nav[0];
+            }
+
             // get the sections to scroll as pages
             self.sections = document
                 .getElementsByClassName(self.config.sectionClass);
 
+        };
+
+        /**
+         * Set the navigation for each section.
+         *
+         * @author JohnG <john.gieselmann@gmail.com>
+         *
+         * @return void
+         */
+        this.setNav = function() {
+            // get the unordered list and it's html
+            var ul = self.nav.getElementsByTagName("ul");
+            var navLink = ul[0].innerHTML;
+
+            // create the new links as a string
+            var newLinks = "";
+            for (var i in self.sections) {
+                newLinks += navLink.replace("<%section%>", "sps-sec-" + i);
+            }
+            console.log(newLinks);
+
+            // reassign the html of the unordered list
+            ul[0].innerHTML = newLinks;
         };
 
         /**
@@ -374,6 +434,12 @@
 
                 // increment the z-index
                 zCount++;
+            }
+
+            // set the z-index of the nav now that we have all the sections
+            // set
+            if (self.config.nav) {
+                self.nav.style.zIndex = zCount;
             }
         };
 

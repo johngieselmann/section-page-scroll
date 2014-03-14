@@ -1,12 +1,36 @@
 @charset "UTF-8";
 
 /* ==========================================================================
-   Section comment block
+   Nav
    ========================================================================== */
 
-/* Sub-section comment block
-   ========================================================================== */
+.sps-nav {
+    position: absolute;
+    top: 2em;
+    right: 2em;
+}
 
+.sps-nav ul {
+    list-style-type: none;
+}
+
+.sps-nav ul li {
+    padding: 1em 0;
+}
+
+.sps-nav ul li a {
+    display: block;
+    width: 1.5em;
+    height: 1.5em;
+
+    cursor: pointer;
+    background: #444;
+    border-radius: 50% 50% 50% 50%;
+}
+
+/* ==========================================================================
+   Sections
+   ========================================================================== */
 .section-page-scroller {
     position: absolute;
     width: 100%;
@@ -29,3 +53,4 @@
 .sps-section.sps-up {
     top: -100%;
 }
+
